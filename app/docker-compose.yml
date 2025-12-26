@@ -10,6 +10,7 @@ services:
       DB_NAME: tododb
       DB_USER: todo
       DB_PASSWORD: todo
+      N8N_WEBHOOK_URL: http://n8n:5678/webhook/todo-created
     depends_on:
       - postgres
     restart: always
@@ -31,10 +32,10 @@ services:
     ports:
       - "5678:5678"
     environment:
-      N8N_BASIC_AUTH_ACTIVE: "true"
-      N8N_BASIC_AUTH_USER: admin
-      N8N_BASIC_AUTH_PASSWORD: admin123
-      WEBHOOK_URL: http://localhost:5678/webhook/todo-created 
+      N8N_BASIC_AUTH_ACTIVE: "false"
+#      N8N_BASIC_AUTH_USER: admin
+#      N8N_BASIC_AUTH_PASSWORD: admin123
+      WEBHOOK_URL: http://localhost:5678 
     volumes:
       - n8n-data:/home/node/.n8n
     restart: always

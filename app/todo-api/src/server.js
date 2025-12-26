@@ -48,7 +48,7 @@ app.get("/todos", (req, res) => {
  * ToDo 생성
  * Body 예시: { "title": "buy milk" }
  */
-app.post("/todos", (req, res) => {
+app.post("/todos", async (req, res) => {
   const { title } = req.body ?? {};
   if (!title || typeof title !== "string") {
     return res.status(400).json({
@@ -58,9 +58,41 @@ app.post("/todos", (req, res) => {
 
   const todo = createTodo(title);
 
-  // 여기서 n8n webhook으로 이벤트를 보내는 방식도 가능(이벤트 확장 지점)
+  // n8n(Webhook Trigger)로 이벤트 푸시
+  // - N8N_WEBHOOK_URL(환경변수)로 n8n Production Webhook 엔드포인트를 주입
+  // - 외부 자동화(n8n) 장애가 ToDo 생성 자체를 막지 않도록 "best-effort"로 전송
+  const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
+
+  if (n8nWebhookUrl) {
+    try {
+      const resp = await fetch(n8nWebhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventType: "todo.created",
+          data: todo,
+          sentAt: new Date().toISOString(),
+        }),
+      });
+
+      // fetch는 4xx/5xx에서 throw하지 않으므로 상태코드를 직접 확인해야 함
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        console.error(
+          `[WARN] n8n webhook failed: status=${resp.status} body=${text}`
+        );
+      }
+    } catch (err) {
+      // 네트워크/DNS 등의 진짜 예외는 여기로 옴
+      console.error("[WARN] Failed to notify n8n webhook:", err?.message ?? err);
+    }
+  } else {
+    console.warn("[WARN] N8N_WEBHOOK_URL is not set. Skipping webhook notify.");
+  }
+
   res.status(201).json(todo);
 });
+
 
 /**
  * ToDo 단건 조회
