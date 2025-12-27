@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-api
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: todo-api
+          image: REPLACE_ME_IMAGE
+          env:
+            - name: N8N_WEBHOOK_URL
+              # value 값은 추후 EKS올릴때 설정할 예정
+              value: ""

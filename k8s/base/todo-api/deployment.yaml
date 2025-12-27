@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-api
+  labels:
+    app: todo-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-api
+  template:
+    metadata:
+      labels:
+        app: todo-api
+    spec:
+      containers:
+        - name: todo-api
+          image: REPLACE_ME_IMAGE
+          ports:
+            - containerPort: 8080
+          env:
+            # 환경변수: 컨테이너 실행 시 외부에서 주입하는 설정 값
+            - name: PORT
+              value: "8080"
+          readinessProbe:
+            # Readiness probe: "트래픽 받아도 되는 상태인지" 체크
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            # Liveness probe: "프로세스가 살아있는지" 체크
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
