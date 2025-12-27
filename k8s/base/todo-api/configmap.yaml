@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: todo-api-config
+data:
+  #ConfigMap: 민감하지 않은 설정 값 보관용
+  # 지금은 데모용으로만.
+  APP_NAME: "todo-api"
