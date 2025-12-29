@@ -8,7 +8,7 @@ spec:
     spec:
       containers:
         - name: todo-api
-          image: REPLACE_ME_IMAGE
+          image: 808985145578.dkr.ecr.ap-northeast-2.amazonaws.com/devops-portfolio/todo-api:v0.2.2
           env:
             - name: N8N_WEBHOOK_URL
               # value 값은 추후 EKS올릴때 설정할 예정
