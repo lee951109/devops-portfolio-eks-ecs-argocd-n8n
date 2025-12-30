@@ -86,15 +86,15 @@ Argo CD Application 생성 시 아래 유형의 오류가 발생할 수 있다.
 ## 6. Argo CD Application 설정(요약)
 Argo CD Application은 다음 정보를 가진다.
 - Source(소스)
- - Repository URL: (Git Repository)
- - Revision: main 또는 develop
- - Path: k8s/envs/dev
+  - Repository URL: (Git Repository)
+  - Revision: main 또는 develop
+  - Path: k8s/envs/dev
 - Destination(대상)
- - Cluster: 대상 EKS 클러스터
- - Namespace: dev
+  - Cluster: 대상 EKS 클러스터
+  - Namespace: dev
 - Sync Policy(동기화 정책)
- - Manual: 수동 Sync
- - Auto: Git 변경 시 자동 Sync (안정화 후 적용 권장)
+  - Manual: 수동 Sync
+  - Auto: Git 변경 시 자동 Sync (안정화 후 적용 권장)
 
  ---
 
