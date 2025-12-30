@@ -5,9 +5,7 @@ namespace: dev
 
 resources:
   - namespace.yaml
-  - ../../base/todo-api/deployment.yaml
-  - ../../base/todo-api/service.yaml
-  - ../../base/todo-api/configmap.yaml
+  - ../../base/todo-api
 
 patches:
   - path: todo-api-patch.yaml
