@@ -50,7 +50,7 @@ k8s/
       namespace.yaml
       kustomization.yaml
       todo-api-patch.yaml
-
+```
 ---
 
 ## 4. Kustomize(커스터마이즈) 사용 이유
