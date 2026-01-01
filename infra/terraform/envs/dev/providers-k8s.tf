@@ -26,4 +26,9 @@ provider "helm" {
   #     cluster_ca_certificate = base64decode(data.aws_eks_cluster.this.certificate_authority[0].data)
   #     token                  = data.aws_eks_cluster_auth.this.token
   #   }
+
+  kubernetes {
+    # Windows에서도 확실하게 읽히는 경로 표기
+    config_path = "C:/Users/이지현/.kube/config"
+  }
 }
