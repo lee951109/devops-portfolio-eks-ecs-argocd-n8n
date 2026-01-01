@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   type        = string
   description = "프로젝트 이름"
-  default     = "devops-protfolio"
+  default     = "devops-portfolio"
 }
 
 variable "env" {
