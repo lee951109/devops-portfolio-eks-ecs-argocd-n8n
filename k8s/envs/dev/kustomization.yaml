@@ -6,6 +6,7 @@ namespace: dev
 resources:
   - namespace.yaml
   - ../../base/todo-api
+  - ../../base/n8n
 
 patches:
   - path: todo-api-patch.yaml
