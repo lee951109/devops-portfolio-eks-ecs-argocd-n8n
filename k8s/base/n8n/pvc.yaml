@@ -3,7 +3,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: n8n-data
 spec:
-  storageClassName: gp3
+  storageClassName: gp2
   accessModes:
     - ReadWriteOnce
   resources:
