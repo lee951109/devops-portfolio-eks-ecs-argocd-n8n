@@ -3,13 +3,12 @@ kind: Deployment
 metadata:
   name: todo-api
 spec:
-  replicas: 1
+  replicas: 2
   template:
     spec:
       containers:
         - name: todo-api
-          #image: 808985145578.dkr.ecr.ap-northeast-2.amazonaws.com/devops-portfolio/todo-api:v0.2.2
-          image: nginx:not-exist-tag
+          image: 808985145578.dkr.ecr.ap-northeast-2.amazonaws.com/devops-portfolio/todo-api:v0.2.2
           env:
             - name: N8N_WEBHOOK_URL
               # value 값은 추후 EKS올릴때 설정할 예정
