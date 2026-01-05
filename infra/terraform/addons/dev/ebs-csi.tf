@@ -5,7 +5,7 @@
 
 locals {
   oidc_issuer_hostpath = replace(
-    aws_iam_openid_connect_provider.eks.url,
+    data.aws_iam_openid_connect_provider.eks.url,
     "https://",
     ""
   )
@@ -14,7 +14,7 @@ locals {
 # 1) IAM Role for ServiceAccount (IRSA: IAM Roles for Service Accounts)
 #    - kube-system 네임스페이스의 ebs-csi-controller-sa ServiceAccount가 이 Role을 Assume
 resource "aws_iam_role" "ebs_csi" {
-  name = "${var.name}-ebs-csi-role"
+  name = "${var.cluster_name}-ebs-csi-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -23,7 +23,7 @@ resource "aws_iam_role" "ebs_csi" {
 
       # OIDC Provider를 통해 WebIdentity로 Assume
       Principal = {
-        Federated = aws_iam_openid_connect_provider.eks.arn
+        Federated = data.aws_iam_openid_connect_provider.eks.arn
       }
 
       Action = "sts:AssumeRoleWithWebIdentity"
@@ -38,7 +38,7 @@ resource "aws_iam_role" "ebs_csi" {
   })
 
   tags = merge(var.tags, {
-    Name = "${var.name}-ebs-csi-role"
+    Name = "${var.cluster_name}-ebs-csi-role"
   })
 }
 
@@ -52,7 +52,7 @@ resource "aws_iam_role_policy_attachment" "ebs_csi_attach" {
 # 3) EKS Add-on 설치
 #    - EKS가 관리형으로 aws-ebs-csi-driver를 설치/업데이트/운영
 resource "aws_eks_addon" "ebs_csi" {
-  cluster_name = aws_eks_cluster.this.name
+  cluster_name = data.aws_eks_cluster.this.name
   addon_name   = "aws-ebs-csi-driver"
 
   # IRSA 연결(여기가 핵심)
@@ -67,6 +67,6 @@ resource "aws_eks_addon" "ebs_csi" {
   ]
 
   tags = merge(var.tags, {
-    Name = "${var.name}-aws-ebs-csi-driver"
+    Name = "${var.cluster_name}-aws-ebs-csi-driver"
   })
 }
