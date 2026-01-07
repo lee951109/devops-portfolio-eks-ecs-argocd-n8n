@@ -3,13 +3,13 @@
 # - Purpose: PVC(PersistentVolumeClaim)가 EBS 볼륨을 자동 생성/Attach/Mount 하도록 함
 ############################################
 
-locals {
-  oidc_issuer_hostpath = replace(
-    data.aws_iam_openid_connect_provider.eks.url,
-    "https://",
-    ""
-  )
-}
+# locals {
+#   oidc_issuer_hostpath = replace(
+#     data.aws_iam_openid_connect_provider.eks.url,
+#     "https://",
+#     ""
+#   )
+# }
 
 # 1) IAM Role for ServiceAccount (IRSA: IAM Roles for Service Accounts)
 #    - kube-system 네임스페이스의 ebs-csi-controller-sa ServiceAccount가 이 Role을 Assume
@@ -31,7 +31,7 @@ resource "aws_iam_role" "ebs_csi" {
       # 특정 ServiceAccount만 Assume 가능하도록 제한(보안 핵심)
       Condition = {
         StringEquals = {
-        "${local.oidc_issuer_hostpath}:sub" = "system:serviceaccount:kube-system:ebs-csi-controller-sa"
+          "${local.oidc_issuer_hostpath}:sub" = "system:serviceaccount:kube-system:ebs-csi-controller-sa"
         }
       }
     }]
