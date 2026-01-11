@@ -59,3 +59,55 @@ EKS · ECS · Argo CD · n8n · GitHub Actions · Terraform · GitOps
 │     └─ apps           # todo-api-dev, n8n Application
 ├─ docs/                # 아키텍처 및 운영 문서
 └─ README.md
+```
+
+## 4. Terraform 설계 (Root 분리)
+Terraform 구성은 의도적으로 두 개의 Root로 분리하였다.
+
+- Infra Root (`infra/terraform/envs/dev`)
+  - VPC
+  - EKS Cluster
+  - Managed Node Group
+  - OIDC Provider
+
+- Add-ons Root (`infra/terraform/addons/dev`)
+  - Argo CD (Helm)
+  - EBS CSI Driver (EKS Add-on)
+  - IRSA (IAM Role for Service Account)
+
+- Root 분리 이유
+  - 인프라와 플랫폼(Add-on) 책임 분리
+  - 클러스터 재생성 시 애드온 재적용 용이
+  - destroy / recreate 시 안정성 확보
+  - 실무 DevOps환경의 역할 분리를 반영
+
+## 5. GitOps 아키텍처 (Argo CD)
+### App Of Apps 패턴
+- apps-root Application이 최상위 컨트롤러 역할
+- 하위 Application
+  - todo-api-dev
+  - n8n
+  
+이를 통해 여러 애플리케이션을 하나의 진입점에서 선언적으로 관리한다.
+
+### 선언적 배포 원칙
+- 모든 Application 설정은 Git에 선언
+- Argo CD UI에서의 수동 설정은 사용하지 않음
+- UI 변경은 Git 선언이 없을 경우 자동 원복됨
+  
+Git이 항상 단일 진실 소스 역할을 한다
+
+## 6. GitOps 동작 검증
+### Auto Sync (자동 동기화)
+- Git에서 Deployment의 replicas 변경
+- Sync 버튼 클릭 없이 자동 반영 확인
+
+### Self Heal (자동 복구)
+- kubectl로 클러스터에서 수동 변경
+- Argo CD가 Git 상태로 자동 복구 확인
+
+### Prune (자동 삭제)
+- Git에서 리소스 삭제
+- 클러스터에서도 자동 삭제 확인
+
+이를 통해 Git 선언이 항상 최종 상태를 결정함을 검증
