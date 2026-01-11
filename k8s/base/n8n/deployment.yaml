@@ -14,6 +14,10 @@ spec:
     spec:
       containers:
         - name: n8n
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
           image: n8nio/n8n:latest
           ports:
             - containerPort: 5678
@@ -24,6 +28,8 @@ spec:
               value: "false"
             - name: N8N_ENCRYPTION_KEY 
               value: "change-me-in-dev"
+            - name: N8N_PORT
+              value: "5678"
           volumeMounts:
             - name: n8n-data 
               mountPath: /home/node/.n8n
@@ -31,4 +37,5 @@ spec:
         - name: n8n-data
           persistentVolumeClaim:
             claimName: n8n-data
-
+      securityContext:
+        fsGroup: 1000
