@@ -23,7 +23,7 @@ EKS · ECS · Argo CD · n8n · GitHub Actions · Terraform · GitOps
 ```mermaid
 graph TD
 
-subgraph AWS["AWS Cloud (Free-Tier)"]
+subgraph AWS["AWS Cloud"]
   subgraph VPC["VPC (10.10.0.0/16)"]
 
     IGW["Internet Gateway"]
