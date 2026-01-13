@@ -18,6 +18,50 @@ EKS · ECS · Argo CD · n8n · GitHub Actions · Terraform · GitOps
 
 ---
 
+## 🧱 아키텍처 구성도
+
+```mermaid
+graph TD
+
+subgraph AWS["AWS Cloud (Free-Tier)"]
+  subgraph VPC["VPC (10.10.0.0/16)"]
+
+    IGW["Internet Gateway"]
+
+    subgraph Public["Public Subnet"]
+      NAT["EC2 NAT Instance"]
+      WEB["EC2 Bastion / Web"]
+    end
+
+    subgraph Private["Private Subnet"]
+      EKS["EKS Cluster"]
+
+      subgraph Nodes["Worker Nodes"]
+        POD1["todo-api Pod"]
+        POD2["n8n Pod"]
+      end
+    end
+
+    S3["S3 (Static / Artifact)"]
+    DDB["DynamoDB (Terraform State Lock)"]
+    PS["SSM Parameter Store (.env)"]
+  end
+end
+
+Git["GitHub Repository"] -->|GitOps| Argo["Argo CD"]
+Argo --> EKS
+
+IGW --> WEB
+WEB --> PS
+WEB --> S3
+NAT --> EKS
+
+EKS --> POD1
+EKS --> POD2
+
+EKS --> DDB
+
+```
 ## 2. 사용 기술
 
 ### Container / Orchestration
