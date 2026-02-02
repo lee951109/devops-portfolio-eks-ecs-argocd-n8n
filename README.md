@@ -3,86 +3,75 @@ EKS · Argo CD · n8n · GitHub Actions · Terraform · GitOps
 
 ---
 
-## 1. 프로젝트 목표
+## 1. 프로젝트 개요
+본 프로젝트는 AWS 환경에서 Terraform을 사용하여 인프라를 코드화(IaC)하고, Argo CD를 활용하여 애플리케이션의 지속적 배포(CD)를 자동화한 GitOps 운영 모델 구현 프로젝트입니다.
 
-본 프로젝트는 AWS 환경에서 **GitOps 기반 DevOps 아키텍처를 직접 설계·구현·검증**하는 것을 목표로 한다.
-
-주요 목표는 다음과 같다.
-
-- ToDo 애플리케이션과 n8n(워크플로우 자동화 도구)을 컨테이너화
-- AWS EKS(Elastic Kubernetes Service)에 **Argo CD 기반 GitOps 방식으로 배포**
-- Git 변경 → 자동 반영, 수동 변경 → 자동 복구가 동작함을 실제로 검증
-- 동일 애플리케이션을 AWS ECS(Elastic Container Service) 기준으로도 배포하여
-  **EKS와 ECS의 운영 관점 차이를 비교**
-- CI/CD, 인프라 자동화, 운영 안정성까지 포함한 DevOps 포트폴리오 구성
-
+주요 목표
+- EKS 인프라 자동화: Terraform을 사용하여 VPC 네트워크부터 EKS 클러스터까지 전 과정을 자동화
+- GitOps 파이프라인 구축: Argo CD를 도입하여 Git 저장소의 선언적 상태와 클러스터 상태를 일치시킴
+- 보안 및 권한 분리: IRSA(IAM Role for Service Account)를 통한 최소 권한 원칙(PoLP) 적용
+- CI/CD 자동화: GitHub Actions를 활용한 인프라 배포 자동화 및 State 관리
 ---
 
 ## 🧱 아키텍처 구성도
 
 ```mermaid
 graph TD
-
-subgraph AWS["AWS Cloud"]
-  subgraph VPC["VPC (10.10.0.0/16)"]
-
-    IGW["Internet Gateway"]
-
-    subgraph Public["Public Subnet"]
-      NAT["EC2 NAT Instance"]
-      WEB["EC2 Bastion"]
+    subgraph GitHub_Ecosystem [GitHub Ecosystem]
+        Repo[GitHub Repository]
+        GA[GitHub Actions]
     end
 
-    subgraph Private["Private Subnet"]
-      EKS["EKS Cluster"]
+    subgraph AWS_Cloud [AWS Cloud - VPC 10.0.0.0/16]
+        IGW[Internet Gateway]
+        
+        subgraph Public_Subnet [Public Subnet]
+            Bastion[Bastion Host]
+            NAT[NAT Gateway]
+        end
 
-      subgraph Nodes["Worker Nodes"]
-        POD1["todo-api Pod"]
-        POD2["n8n Pod"]
-      end
+        subgraph Private_Subnet [Private Subnet]
+            subgraph EKS_Cluster [EKS Cluster]
+                ArgoCD[Argo CD]
+                subgraph Worker_Nodes [Worker Nodes]
+                    ToDo[todo-api Pod]
+                end
+            end
+        end
+
+        subgraph Management_Layer [Management Layer]
+            S3[(S3 - TF State)]
+            DDB[(DynamoDB - TF Lock)]
+            SSM[SSM Parameter Store]
+        end
     end
 
-    S3["S3 (Static / Artifact)"]
-    DDB["DynamoDB (Terraform State Lock)"]
-    PS["SSM Parameter Store (.env)"]
-  end
-end
+    %% Flow: CI/CD & IaC
+    Repo --> GA
+    GA -- Manage State --> S3
+    GA -- Manage State --> DDB
+    GA -- Provision --> EKS_Cluster
 
-Git["GitHub Repository"] -->|GitOps| Argo["Argo CD"]
-Argo --> EKS
+    %% Flow: Traffic & Access
+    IGW --> Bastion
+    Bastion -- SSH Admin --> Worker_Nodes
+    Worker_Nodes -- Outbound --> NAT
+    NAT --> IGW
 
-IGW --> WEB
-WEB --> PS
-WEB --> S3
-NAT --> EKS
+    %% Flow: GitOps
+    Repo -- GitOps Sync --> ArgoCD
+    ArgoCD -- Deploy --> ToDo
 
-EKS --> POD1
-EKS --> POD2
-
-EKS --> DDB
+    %% Flow: Permissions (IRSA)
+    Worker_Nodes -- IRSA Access --> SSM
 
 ```
 ## 2. 사용 기술
-
-### Container / Orchestration
-- Docker (컨테이너 이미지 빌드)
-- Kubernetes
-
-### Cloud (AWS)
-- AWS EKS (Elastic Kubernetes Service)
-- AWS ECS (Elastic Container Service)
-- Amazon EBS + EBS CSI Driver (스토리지)
-
-### GitOps / CI·CD
-- Argo CD (Argo Continuous Delivery)
-- GitHub Actions (Continuous Integration)
-
-### Infrastructure as Code
-- Terraform
-
-### Application
-- ToDo API (Node.js)
-- n8n (Workflow Automation Platform)
+- Infrastructure: AWS (VPC, EKS, NAT Gateway, S3, DynamoDB)
+- Container: Docker, Kubernetes
+- CI/CD & GitOps: GitHub Actions, Argo CD
+- IaC: Terraform
+- Application: Node.js (ToDo API)
 
 ---
 
@@ -105,53 +94,17 @@ EKS --> DDB
 └─ README.md
 ```
 
-## 4. Terraform 설계 (Root 분리)
-Terraform 구성은 의도적으로 두 개의 Root로 분리하였다.
+## 4. 핵심 설계 및 개선 사항
+**명확한 역할 분리 (Security & Operations)**
+- Bastion Host (Security): Public Subnet에 위치하며 내부망(Private) 관리를 위한 전용 통로로 활용합니다. 인스턴스에 직접적인 웹 서버 기능을 두지 않아 보안 위협을 최소화했습니다.
+- NAT Gateway (Inbound/Outbound): AWS 관리형 NAT Gateway를 통해 Private Subnet 내의 워커 노드들이 안전하게 외부 패치 및 라이브러리를 업데이트할 수 있도록 설계했습니다.
+- IRSA 기반 권한 관리: 애플리케이션 Pod가 AWS 서비스(SSM Parameter Store 등)에 접근할 때, 인스턴스 권한이 아닌 Service Account 기반의 IAM Role을 사용하도록 설정하여 보안성을 강화했습니다.
 
-- Infra Root (`infra/terraform/envs/dev`)
-  - VPC
-  - EKS Cluster
-  - Managed Node Group
-  - OIDC Provider
+**Terraform 운영 전략**
+- State Backend: S3와 DynamoDB를 조합하여 Terraform State 파일의 유실을 방지하고, 협업 시 발생할 수 있는 충돌(State Locking)을 제어합니다.
+- Module화 설계: VPC, EKS 등을 모듈 단위로 구성하여 인프라의 재사용성과 가독성을 높였습니다.
 
-- Add-ons Root (`infra/terraform/addons/dev`)
-  - Argo CD (Helm)
-  - EBS CSI Driver (EKS Add-on)
-  - IRSA (IAM Role for Service Account)
-
-- Root 분리 이유
-  - 인프라와 플랫폼(Add-on) 책임 분리
-  - 클러스터 재생성 시 애드온 재적용 용이
-  - destroy / recreate 시 안정성 확보
-  - 실무 DevOps환경의 역할 분리를 반영
-
-## 5. GitOps 아키텍처 (Argo CD)
-### App Of Apps 패턴
-- apps-root Application이 최상위 컨트롤러 역할
-- 하위 Application
-  - todo-api-dev
-  - n8n
-  
-이를 통해 여러 애플리케이션을 하나의 진입점에서 선언적으로 관리한다.
-
-### 선언적 배포 원칙
-- 모든 Application 설정은 Git에 선언
-- Argo CD UI에서의 수동 설정은 사용하지 않음
-- UI 변경은 Git 선언이 없을 경우 자동 원복됨
-  
-Git이 항상 단일 진실 소스 역할을 한다
-
-## 6. GitOps 동작 검증
-### Auto Sync (자동 동기화)
-- Git에서 Deployment의 replicas 변경
-- Sync 버튼 클릭 없이 자동 반영 확인
-
-### Self Heal (자동 복구)
-- kubectl로 클러스터에서 수동 변경
-- Argo CD가 Git 상태로 자동 복구 확인
-
-### Prune (자동 삭제)
-- Git에서 리소스 삭제
-- 클러스터에서도 자동 삭제 확인
-
-이를 통해 Git 선언이 항상 최종 상태를 결정함을 검증
+## 5. 배포 및 운영 흐름
+- Infrastructure: GitHub Actions를 통해 Terraform 코드가 반영되며 AWS 인프라가 프로비저닝됩니다.
+- Application: 개발자가 Git에 코드를 푸시하면 Argo CD가 이를 감지하여 EKS 클러스터 내의 Pod 상태를 자동으로 업데이트합니다.
+- Configuration: 애플리케이션에 필요한 환경 변수는 SSM Parameter Store에서 관리하며 Pod 기동 시 주입됩니다.
