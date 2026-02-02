@@ -1,5 +1,5 @@
 # DevOps Portfolio  
-EKS · ECS · Argo CD · n8n · GitHub Actions · Terraform · GitOps
+EKS · Argo CD · n8n · GitHub Actions · Terraform · GitOps
 
 ---
 
