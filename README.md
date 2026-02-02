@@ -30,7 +30,7 @@ subgraph AWS["AWS Cloud"]
 
     subgraph Public["Public Subnet"]
       NAT["EC2 NAT Instance"]
-      WEB["EC2 Bastion / Web"]
+      WEB["EC2 Bastion"]
     end
 
     subgraph Private["Private Subnet"]
